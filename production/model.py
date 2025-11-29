@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1XpKx_mAVf5QfnnotBy3TfiBz8HMtcgJr
 """
 
-#This python script (Jupyter Notebook) was created by Marc Elliott to test a decision tree for predicting student performance on the OULA dataset
+#This python script ( initially Jupyter Notebook) was created by Marc Elliott to test a decision tree for predicting student performance on the OULA dataset
 #The dataset has been preprocessed in another python file already
 #Two experiments are being ran - one using the full feature set, the other using the most important (based on Boruta score of 20+)
 
@@ -17,10 +17,22 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 import pandas as pd
 import random
+import argparse
+import joblib #For saving the model
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+
+# Get the arugments we need to avoid fixing the dataset path in code
+parser = argparse.ArgumentParser()
+parser.add_argument("--trainingdata", type=str, required=True, help='Dataset for training')
+parser.add_argument("--testingdata", type=str, required=True, help='Dataset for testing')
+args = parser.parse_args()
 
 #Load preprocessed training and test data
-train = pd.read_csv('OULA_train_normalised.csv')
-test = pd.read_csv('OULA_test_normalised.csv')
+train = pd.read_csv(args.trainingdata)
+test = pd.read_csv(args.testingdata)
 
 #Prepare training data
 
@@ -57,44 +69,51 @@ print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
 print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
+joblib.dump(dt, 'outputs/dt_model.joblib') #Save the trained model for later use
+
+
+
+
+#ADDITIONAL EXPERIMENTS AND ANALYSIS
+
 #Get the confusion matrix of results to better understand the quality of predictions
-from sklearn.metrics import confusion_matrix
+#from sklearn.metrics import confusion_matrix
 #TN = predicted fail and did fail - CORRECT
 #FP = predicted pass and did not pass - INCORRECT PRED
 #FN = predicted fail and did not fail - INCORRECT
 #TP = predicted pass and did pass - INCORRECT
-print(dt.tree_.max_depth)
-tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
-print(tn, fp, fn, tp)
+#print(dt.tree_.max_depth)
+#tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+#print(tn, fp, fn, tp)
 
 #Look at how the decision tree makes its predictions - tree has too many nodes! Not interpretable
-import graphviz
-dot_data = tree.export_graphviz(dt, out_file=None,
-                     feature_names=list(X_train.columns.values),
-                     class_names=['Pass','Fail'],
-                     filled=True, rounded=True,
-                     special_characters=True)
-graph = graphviz.Source(dot_data)
-graph
+#import graphviz
+#dot_data = tree.export_graphviz(dt, out_file=None,
+#                     feature_names=list(X_train.columns.values),
+#                     class_names=['Pass','Fail'],
+#                     filled=True, rounded=True,
+#                     special_characters=True)
+#graph = graphviz.Source(dot_data)
+#graph
 
 #Create a more interpretable decision tree with less nodes
 #We will try utilising a depth of 6, provides enough depth for greater use of the features available without losing interpretability
-dt_interpretable = tree.DecisionTreeClassifier(max_depth=6)
-dt_interpretable.fit(X_train, y_train)
+#dt_interpretable = tree.DecisionTreeClassifier(max_depth=6)
+#dt_interpretable.fit(X_train, y_train)
 
-y_pred_interpretable = dt_interpretable.predict(X_test)
+#y_pred_interpretable = dt_interpretable.predict(X_test)
 
-print("Accuracy More Interpretable DT:",metrics.accuracy_score(y_test, y_pred_interpretable))
-print("Precision:",metrics.precision_score(y_test, y_pred_interpretable))
-print("Recall:",metrics.recall_score(y_test, y_pred_interpretable))
+#print("Accuracy More Interpretable DT:",metrics.accuracy_score(y_test, y_pred_interpretable))
+#print("Precision:",metrics.precision_score(y_test, y_pred_interpretable))
+#print("Recall:",metrics.recall_score(y_test, y_pred_interpretable))
 
-dot_data = tree.export_graphviz(dt_interpretable, out_file=None,
-                     feature_names=list(X_train.columns.values),
-                     class_names=['Pass','Fail'],
-                     filled=True, rounded=True,
-                     special_characters=True)
-graph = graphviz.Source(dot_data)
-graph
+#dot_data = tree.export_graphviz(dt_interpretable, out_file=None,
+#                     feature_names=list(X_train.columns.values),
+#                     class_names=['Pass','Fail'],
+#                     filled=True, rounded=True,
+#                     special_characters=True)
+#graph = graphviz.Source(dot_data)
+#graph
 
 ### Experiment 2
 #Use most important features for decision tree
@@ -106,7 +125,7 @@ graph
 
 #Features selected based on Boruta results on the OULA datasets 27 features
 #Drop features with less than 20 importance on Boruta
-train_FS_20 = X_train.drop(columns=['disability','date_registration','age_band','num_of_prev_attempts','gender','glossary_clicks','studied_credits'])
+"""train_FS_20 = X_train.drop(columns=['disability','date_registration','age_band','num_of_prev_attempts','gender','glossary_clicks','studied_credits'])
 test_FS_20 = X_test.drop(columns=['disability','date_registration','age_band','num_of_prev_attempts','gender','glossary_clicks','studied_credits'])
 
 #Drop features with less than 40 importance on Boruta
@@ -141,5 +160,5 @@ y_pred_FS60 = dt_FS60.predict(X_test[['total_assessment_submissions']])
 
 print("Accuracy More Interpretable DT:",metrics.accuracy_score(y_test, y_pred_FS60))
 print("Precision:",metrics.precision_score(y_test, y_pred_FS60))
-print("Recall:",metrics.recall_score(y_test, y_pred_FS60))
+print("Recall:",metrics.recall_score(y_test, y_pred_FS60))"""
 
