@@ -4,10 +4,10 @@ command: python model.py --trainingdata ${{ inputs.training_data }} --testingdat
 inputs:
   training_data:
     type: uri_file
-    path: azureml:OULA_training_data:1
+    path: azureml:OULA_training_data:2
   testing_data:
     type: uri_file
-    path: azureml:OULA_test_data:1
+    path: azureml:OULA_test_data:2
 environment: azureml://registries/azureml/environments/sklearn-1.1/versions/14
 compute: azureml:cw2-ml-compute
 experiment_name: c2-marc-job
