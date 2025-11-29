@@ -23,6 +23,16 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
+import mlflow
+import mlflow.sklearn
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
+
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+
 
 # Get the arugments we need to avoid fixing the dataset path in code
 parser = argparse.ArgumentParser()
@@ -49,116 +59,44 @@ X_test = test.drop(columns=['final_result'])
 #Get target feature (y) for test dataset
 y_test = test['final_result']
 
-#BUILD DECISION TREE MODEL AND TRAIN
-from sklearn import tree
+mlflow.autolog(log_input_examples=True)
 
-#Initialise decision tree classifier
-dt = tree.DecisionTreeClassifier()
+def evaluate_and_log(model_name, model, X_train, y_train, X_test, y_test):
+    """
+    Trains model, evaluates it, and logs metrics + model to MLflow.
+    """
+    with mlflow.start_run(run_name=model_name):
+        # Train
+        model.fit(X_train, y_train)
 
-#Train the decision tree classifier on the training dataset for OULA
-dt = dt.fit(X_train, y_train)
+        # Predict
+        y_pred = model.predict(X_test)
 
-#EVALUATE THE DECISION TREE MODEL
-from sklearn import metrics #Import metrics module for accuracy calculation
+        # Metrics
+        acc = accuracy_score(y_test, y_pred)
+        prec = precision_score(y_test, y_pred)
+        rec = recall_score(y_test, y_pred)
 
-#Have the trained decision tree make predictions for the test data
-y_pred = dt.predict(X_test)
+        # Log metrics
+        mlflow.log_metric("accuracy", acc)
+        mlflow.log_metric("precision", prec)
+        mlflow.log_metric("recall", rec)
 
-# Model Accuracy - % of correct predictions. Compares the y_test (true values) against y_pred (predicted values)
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-print("Precision:",metrics.precision_score(y_test, y_pred))
-print("Recall:",metrics.recall_score(y_test, y_pred))
+        # Log model as real MLflow model
+        mlflow.sklearn.log_model(model, model_name)
 
-joblib.dump(dt, 'outputs/dt_model.joblib') #Save the trained model for later use
+        print(f"\n=== {model_name} RESULTS ===")
+        print(f"Accuracy: {acc:.4f}")
+        print(f"Precision: {prec:.4f}")
+        print(f"Recall: {rec:.4f}")
 
+models = {
+    "DecisionTree": DecisionTreeClassifier(),
+    "LogisticRegression": LogisticRegression(max_iter=1000),
+    "RandomForest": RandomForestClassifier(n_estimators=100)
+}
 
+for model_name, model in models.items():
+    evaluate_and_log(model_name, model, X_train, y_train, X_test, y_test)
 
-
-#ADDITIONAL EXPERIMENTS AND ANALYSIS
-
-#Get the confusion matrix of results to better understand the quality of predictions
-#from sklearn.metrics import confusion_matrix
-#TN = predicted fail and did fail - CORRECT
-#FP = predicted pass and did not pass - INCORRECT PRED
-#FN = predicted fail and did not fail - INCORRECT
-#TP = predicted pass and did pass - INCORRECT
-#print(dt.tree_.max_depth)
-#tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
-#print(tn, fp, fn, tp)
-
-#Look at how the decision tree makes its predictions - tree has too many nodes! Not interpretable
-#import graphviz
-#dot_data = tree.export_graphviz(dt, out_file=None,
-#                     feature_names=list(X_train.columns.values),
-#                     class_names=['Pass','Fail'],
-#                     filled=True, rounded=True,
-#                     special_characters=True)
-#graph = graphviz.Source(dot_data)
-#graph
-
-#Create a more interpretable decision tree with less nodes
-#We will try utilising a depth of 6, provides enough depth for greater use of the features available without losing interpretability
-#dt_interpretable = tree.DecisionTreeClassifier(max_depth=6)
-#dt_interpretable.fit(X_train, y_train)
-
-#y_pred_interpretable = dt_interpretable.predict(X_test)
-
-#print("Accuracy More Interpretable DT:",metrics.accuracy_score(y_test, y_pred_interpretable))
-#print("Precision:",metrics.precision_score(y_test, y_pred_interpretable))
-#print("Recall:",metrics.recall_score(y_test, y_pred_interpretable))
-
-#dot_data = tree.export_graphviz(dt_interpretable, out_file=None,
-#                     feature_names=list(X_train.columns.values),
-#                     class_names=['Pass','Fail'],
-#                     filled=True, rounded=True,
-#                     special_characters=True)
-#graph = graphviz.Source(dot_data)
-#graph
-
-### Experiment 2
-#Use most important features for decision tree
-#FS = Feature Selection
-
-#NOTE - the final decision tree used for the paper was the DT with only features of boruta importance 20>
-#But to better understand the difference in results, we will look at a range of features at different thresholds
-#While 40 importance score achieved the best results, we used the results at 20 to make sure all models were assessed equally and consistently.
-
-#Features selected based on Boruta results on the OULA datasets 27 features
-#Drop features with less than 20 importance on Boruta
-"""train_FS_20 = X_train.drop(columns=['disability','date_registration','age_band','num_of_prev_attempts','gender','glossary_clicks','studied_credits'])
-test_FS_20 = X_test.drop(columns=['disability','date_registration','age_band','num_of_prev_attempts','gender','glossary_clicks','studied_credits'])
-
-#Drop features with less than 40 importance on Boruta
-train_FS_40 = train_FS_20.drop(columns=['total_Exam_submissions','highest_education','total_click_bc','module_presentation_length','url_clicks','questionnaire_clicks','resource_clicks','subpage_clicks','oucontent_clicks','ouwiki_clicks','formng_clicks','quiz_clicks'])
-test_FS_40 = test_FS_20.drop(columns=['total_Exam_submissions','highest_education','total_click_bc','module_presentation_length','url_clicks','questionnaire_clicks','resource_clicks','subpage_clicks','oucontent_clicks','ouwiki_clicks','formng_clicks','quiz_clicks'])
-
-#Decision tree with feature selection of importance 20 or more
-dt_FS20 = tree.DecisionTreeClassifier(max_depth=6)
-dt_FS20.fit(train_FS_20, y_train)
-
-y_pred_FS20 = dt_FS20.predict(test_FS_20)
-
-print("Accuracy More Interpretable DT:",metrics.accuracy_score(y_test, y_pred_FS20))
-print("Precision:",metrics.precision_score(y_test, y_pred_FS20))
-print("Recall:",metrics.recall_score(y_test, y_pred_FS20))
-
-#Decision tree with feature selection of importance 40 or more
-dt_FS40 = tree.DecisionTreeClassifier(max_depth=6)
-dt_FS40.fit(train_FS_40, y_train)
-
-y_pred_FS40 = dt_FS40.predict(test_FS_40)
-
-print("Accuracy More Interpretable DT:",metrics.accuracy_score(y_test, y_pred_FS40))
-print("Precision:",metrics.precision_score(y_test, y_pred_FS40))
-print("Recall:",metrics.recall_score(y_test, y_pred_FS40))
-
-#Decision tree with feature selection of importance 60 or more (only contains 1 feature)
-dt_FS60 = tree.DecisionTreeClassifier(max_depth=6)
-dt_FS60.fit(X_train[['total_assessment_submissions']], y_train)
-
-y_pred_FS60 = dt_FS60.predict(X_test[['total_assessment_submissions']])
-
-print("Accuracy More Interpretable DT:",metrics.accuracy_score(y_test, y_pred_FS60))
-print("Precision:",metrics.precision_score(y_test, y_pred_FS60))
-print("Recall:",metrics.recall_score(y_test, y_pred_FS60))"""
-
+print("\nAll models trained and logged to MLflow.\n")
