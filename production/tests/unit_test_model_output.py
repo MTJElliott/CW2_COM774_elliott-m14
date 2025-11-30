@@ -12,8 +12,8 @@ class TestModelOutput(unittest.TestCase):
     def setUpClass(cls):
         # Get the directory this test file is in
         test_dir = os.path.dirname(__file__)
-        cls.train_path = os.path.join(test_dir, "data", "OULA_tra.csv")
-        cls.test_path = os.path.join(test_dir, "data", "OULA_test_data.csv")
+        cls.train_path = os.path.join(test_dir, "data", "oula_train_pt1.csv")
+        cls.test_path = os.path.join(test_dir, "data", "oula_test.csv")
         
         # Load data once for all tests
         cls.train = pd.read_csv(cls.train_path)
