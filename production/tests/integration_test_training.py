@@ -7,7 +7,9 @@ import joblib
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from model import demographic_parity_difference, equalized_odds_difference
 
 class TestModelIntegration(unittest.TestCase):

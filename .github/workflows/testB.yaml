@@ -7,7 +7,7 @@ on:
 
 jobs:
   testJob:
-    name: testJob
+    name: Azure Login Test Job
     runs-on: ubuntu-latest
     steps:
       - name: Run echo "Hi! I'm running because of a push event for azure."
