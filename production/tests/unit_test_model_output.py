@@ -1,5 +1,6 @@
 import unittest
 import pandas as pd
+import os
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -9,9 +10,14 @@ class TestModelOutput(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # Get the directory this test file is in
+        test_dir = os.path.dirname(__file__)
+        cls.train_path = os.path.join(test_dir, "data", "OULA_tra.csv")
+        cls.test_path = os.path.join(test_dir, "data", "OULA_test_data.csv")
+        
         # Load data once for all tests
-        cls.train = pd.read_csv("data/OULA_training_data.csv")
-        cls.test = pd.read_csv("data/OULA_test_data.csv")
+        cls.train = pd.read_csv(cls.train_path)
+        cls.test = pd.read_csv(cls.test_path)
         cls.X_train = cls.train.drop(columns=['final_result'])
         cls.y_train = cls.train['final_result']
         cls.X_test = cls.test.drop(columns=['final_result'])
