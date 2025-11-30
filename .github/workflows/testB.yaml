@@ -28,6 +28,6 @@ jobs:
       - name: Login into Azure
         uses: azure/login@v1
         with:
-          creds: '${{ secrets.LAB6_SECRET}}'
+          creds: '${{ secrets.AZURE_CREDENTIALS}}'
       - name: Test azure login my getting details
         run: az account show
