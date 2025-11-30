@@ -5,8 +5,8 @@ import os
 class TestDataInput(unittest.TestCase):
     
     def setUp(self):
-        self.train_path = "data/OULA_training_data.csv"
-        self.test_path = "data/OULA_test_data.csv"
+        self.train_path = "data/oula_train_pt1.csv"
+        self.test_path = "data/oula_test.csv"
 
     def test_train_file_exists(self):
         self.assertTrue(os.path.exists(self.train_path), "Training data does not exist")
