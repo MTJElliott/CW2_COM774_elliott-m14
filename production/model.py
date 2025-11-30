@@ -13,60 +13,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score,
-    confusion_matrix
-)
-
-
-# -----------------------------
-# Fairness Metric Functions
-# -----------------------------
-def demographic_parity_difference(y_pred, protected_attribute):
-    """
-    Computes demographic parity difference:
-    P(y_hat=1 | group=1) - P(y_hat=1 | group=0)
-    """
-    groups = protected_attribute.unique()
-
-    if len(groups) != 2:
-        return np.nan  # Only works for binary protected attributes
-
-    g0, g1 = groups
-
-    rate_0 = y_pred[protected_attribute == g0].mean()
-    rate_1 = y_pred[protected_attribute == g1].mean()
-
-    return float(rate_1 - rate_0)
-
-
-def equalized_odds_difference(y_true, y_pred, protected_attribute):
-    """
-    Computes equalized odds difference:
-    TPR(group=1) - TPR(group=0)
-    """
-    groups = protected_attribute.unique()
-
-    if len(groups) != 2:
-        return np.nan
-
-    g0, g1 = groups
-
-    # True positive rates for each group
-    def tpr(y_t, y_p):
-        cm = confusion_matrix(y_t, y_p)
-        if cm.shape != (2, 2):  # Non-binary case
-            return np.nan
-        tn, fp, fn, tp = cm.ravel()
-        return tp / (tp + fn) if (tp + fn) > 0 else 0
-
-    tpr_0 = tpr(y_true[protected_attribute == g0],
-                y_pred[protected_attribute == g0])
-
-    tpr_1 = tpr(y_true[protected_attribute == g1],
-                y_pred[protected_attribute == g1])
-
-    return float(tpr_1 - tpr_0)
+from sklearn.metrics import (accuracy_score, precision_score, recall_score,confusion_matrix)
+from fairlearn.metrics import MetricFrame, demographic_parity_difference, equalized_odds_difference
 
 
 # -----------------------------
@@ -126,8 +74,24 @@ for model_name, model in models.items():
         # ------------------
         # Fairness metrics
         # ------------------
-        dpd = demographic_parity_difference(y_pred, protected_attribute_test)
-        eod = equalized_odds_difference(y_test, y_pred, protected_attribute_test)
+        # Convert to numpy arrays
+        y_true_arr = y_test.values
+        y_pred_arr = y_pred
+        protected_arr = protected_attribute_test.values
+
+        # Demographic Parity Difference
+        dpd = demographic_parity_difference(
+            y_true=None,      # DP only needs predictions
+            y_pred=y_pred_arr,
+            sensitive_features=protected_arr
+        )
+
+        # Equalized Odds Difference
+        eod = equalized_odds_difference(
+            y_true=y_true_arr,
+            y_pred=y_pred_arr,
+            sensitive_features=protected_arr
+        )
 
         mlflow.log_metric("demographic_parity_difference", dpd)
         mlflow.log_metric("equalized_odds_difference", eod)
@@ -135,31 +99,24 @@ for model_name, model in models.items():
         # ------------------
         # Feature importances
         # ------------------
-        feature_names = np.array(X_train.columns)
-        importances = None
-
-        # Tree-based models
         if hasattr(model, "feature_importances_"):
             importances = model.feature_importances_
-
-        # Logistic regression
         elif hasattr(model, "coef_"):
             importances = np.abs(model.coef_[0])
+        else:
+            importances = None
 
         if importances is not None:
-            # Sort descending
-            top_idx = np.argsort(importances)[-3:][::-1]
+            top_idx = np.argsort(importances)[::-1][:3]
 
             for rank, idx in enumerate(top_idx, 1):
                 feature_name = feature_names[idx]
-                feature_value = float(importances[idx])
+                feature_imp = float(importances[idx])
 
-                # Log BOTH name + value as metrics
-                mlflow.log_metric(f"top_feature_{rank}_importance", feature_value)
-                mlflow.log_metric(f"top_feature_{rank}_name", idx)  
-                mlflow.log_param(f"top_feature_{rank}_name_readable", feature_name)
+                mlflow.log_metric(f"top_feature_{rank}_importance", feature_imp)
+                mlflow.log_param(f"top_feature_{rank}_name", feature_name)
 
-                print(f"Top {rank}: {feature_name} ({feature_value:.4f})")
+                print(f"Top {rank}: {feature_name} ({feature_imp:.4f})")
 
         # ------------------
         # Log model
