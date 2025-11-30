@@ -135,23 +135,31 @@ for model_name, model in models.items():
         # ------------------
         # Feature importances
         # ------------------
-        feature_names = X_train.columns
+        feature_names = np.array(X_train.columns)
+        importances = None
 
+        # Tree-based models
         if hasattr(model, "feature_importances_"):
             importances = model.feature_importances_
 
+        # Logistic regression
         elif hasattr(model, "coef_"):
             importances = np.abs(model.coef_[0])
 
-        else:
-            importances = None
-
         if importances is not None:
+            # Sort descending
             top_idx = np.argsort(importances)[-3:][::-1]
 
             for rank, idx in enumerate(top_idx, 1):
-                mlflow.log_metric(f"top_feature_{rank}_value", float(importances[idx]))
-                mlflow.log_param(f"top_feature_{rank}_name", feature_names[idx])
+                feature_name = feature_names[idx]
+                feature_value = float(importances[idx])
+
+                # Log BOTH name + value as metrics
+                mlflow.log_metric(f"top_feature_{rank}_importance", feature_value)
+                mlflow.log_metric(f"top_feature_{rank}_name", idx)  
+                mlflow.log_param(f"top_feature_{rank}_name_readable", feature_name)
+
+                print(f"Top {rank}: {feature_name} ({feature_value:.4f})")
 
         # ------------------
         # Log model
