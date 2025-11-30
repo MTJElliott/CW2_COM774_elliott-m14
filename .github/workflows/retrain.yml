@@ -1,0 +1,60 @@
+name: Auto Retrain Models
+
+on:
+  repository_dispatch:
+    types: [training-data-updated]
+
+  #Also retrain when model.py changes
+  push:
+    paths:
+      - "model.py"
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Azure ML dependencies
+        run: |
+          pip install azure-ai-ml mlflow scikit-learn pandas numpy
+
+      - name: Azure CLI login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Configure default Azure ML workspace
+        run: |
+          az configure --defaults group=${{'elliott-m14_CW2'}} workspace=${{ 'CW2-COM774_elliott' }}
+
+      - name: Download latest training data from Azure ML
+        run: |
+          az ml data download \
+            --name training_data \
+            --version latest \
+            --download-path ./data
+
+      - name: Download latest testing data from Azure ML
+        run: |
+          az ml data download \
+            --name testing_data \
+            --version latest \
+            --download-path ./data
+
+      - name: Run training script
+        run: |
+          python model.py \
+            --trainingdata ./data/training_data/latest/data.csv \
+            --testingdata ./data/testing_data/latest/data.csv
+
+      - name: Upload MLflow artifacts back to Azure ML
+        run: |
+          echo "MLflow autolog has already saved models & metrics to Workspace"

@@ -1,0 +1,15 @@
+$schema: https://azuremlschemas.azureedge.net/latest/schedule.schema.json
+name: trainingdata_trigger
+display_name: Trigger – Training Data Changed
+description: Runs GitHub Action when new version of training data is uploaded.
+trigger:
+  data:
+    - asset_name: training_data
+      asset_version: latest
+      update_type: DataChanged
+action:
+  type: GitHub
+  properties:
+    gitHubUrl: https://api.github.com/repos/MTJElliott/CW2_COM774_elliott-m14/dispatches
+    gitHubPatSecret: github-pat
+    eventType: training-data-updated
