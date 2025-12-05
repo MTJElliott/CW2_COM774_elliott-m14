@@ -1,0 +1,21 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: train_random_forest
+display_name: Train Random Forest
+type: command
+
+inputs:
+  train_data:
+    type: uri_file
+
+outputs:
+  model_output:
+    type: uri_folder
+
+code: ./components/train_random_forest
+command: >-
+  python train_random_forest.py
+  --train_data ${{inputs.train_data}}
+  --model_output ${{outputs.model_output}}
+
+environment:
+  image: mcr.microsoft.com/azureml/sklearn:1.0-ubuntu20.04-py37-cpu

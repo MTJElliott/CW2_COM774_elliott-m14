@@ -1,0 +1,30 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: register_best_models
+display_name: Register Best Models
+type: command
+
+inputs:
+  metrics_file:
+    type: uri_file
+  dt_dir:
+    type: uri_folder
+  lr_dir:
+    type: uri_folder
+  rf_dir:
+    type: uri_folder
+
+outputs:
+  evaluation_results:
+    type: uri_folder
+
+code: .
+command: >-
+  python register_best_models.py
+  --metrics_file ${{inputs.metrics_file}}
+  --dt_dir ${{inputs.dt_dir}}
+  --lr_dir ${{inputs.lr_dir}}
+  --rf_dir ${{inputs.rf_dir}};
+
+environment:
+  conda_file: environment.yml
+  os: Linux

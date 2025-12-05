@@ -1,0 +1,28 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: gather_metrics
+display_name: Gather Metrics
+type: command
+
+inputs:
+  dt_dir:
+    type: uri_folder
+  lr_dir:
+    type: uri_folder
+  rf_dir:
+    type: uri_folder
+
+outputs:
+  metrics_summary:
+    type: uri_folder
+
+code: .
+command: >-
+  python gather_metrics.py 
+  --dt_dir ${{inputs.dt_dir}}
+  --lr_dir ${{inputs.lr_dir}}
+  --rf_dir ${{inputs.rf_dir}}
+  --output_dir ${{outputs.metrics_summary}}
+
+environment:
+  conda_file: environment.yml
+  os: Linux
