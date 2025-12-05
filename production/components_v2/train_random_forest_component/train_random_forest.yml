@@ -1,0 +1,23 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: train_random_forest
+display_name: Train Random Forest Model
+version: 2
+type: command
+
+inputs:
+  trainingdata:
+    type: uri_file
+
+outputs:
+  trained_model:
+    type: uri_folder
+
+code: .
+command: >-
+  python train_random_forest.py
+  --trainingdata ${{inputs.trainingdata}}
+  --trained_model ${{outputs.trained_model}}
+
+environment:
+  image: mcr.microsoft.com/azureml/minimal-ubuntu20.04-py38-cpu-inference:latest
+  conda_file: conda.yml

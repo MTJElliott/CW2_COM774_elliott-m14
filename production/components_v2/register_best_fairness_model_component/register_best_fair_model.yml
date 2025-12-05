@@ -1,0 +1,39 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: register_best_fair_model
+display_name: Register Best Fair(DP) Model
+version: 6
+type: command
+
+inputs:
+  dt_metrics:
+    type: uri_file
+  lr_metrics:
+    type: uri_file
+  rf_metrics:
+    type: uri_file
+
+  dt_model_dir:
+    type: uri_folder
+  lr_model_dir:
+    type: uri_folder
+  rf_model_dir:
+    type: uri_folder
+
+outputs:
+  output_dir:
+    type: uri_folder
+
+code: .
+command: >-
+  python register_best_fair_model.py
+  --dt_metrics ${{inputs.dt_metrics}}
+  --lr_metrics ${{inputs.lr_metrics}}
+  --rf_metrics ${{inputs.rf_metrics}}
+  --dt_model_dir ${{inputs.dt_model_dir}}
+  --lr_model_dir ${{inputs.lr_model_dir}}
+  --rf_model_dir ${{inputs.rf_model_dir}}
+  --output_dir ${{outputs.output_dir}}
+
+environment:
+  image: mcr.microsoft.com/azureml/minimal-ubuntu20.04-py38-cpu-inference:latest
+  conda_file: conda.yml

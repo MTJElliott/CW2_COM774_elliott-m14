@@ -1,0 +1,26 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: decision_tree_train
+display_name: Train Decision Tree
+version: 1
+type: command
+
+inputs:
+  trainingdata:
+    type: uri_file
+  testingdata:
+    type: uri_file
+
+outputs:
+  output_dir:
+    type: uri_folder
+
+code: .
+command: >-
+  python decision_tree.py
+  --trainingdata ${{inputs.trainingdata}}
+  --testingdata ${{inputs.testingdata}}
+  --output_dir ${{outputs.output_dir}}
+
+environment:
+  image: mcr.microsoft.com/azureml/minimal-ubuntu20.04-py38-cpu-inference:latest
+  conda_file: conda.yml

@@ -1,0 +1,26 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: score_model_fairness
+display_name: Score Model Fairness
+version: 8
+type: command
+
+inputs:
+  trained_model:
+    type: uri_folder
+  testdata:
+    type: uri_file
+
+outputs:
+  output_dir:
+    type: uri_folder
+
+code: .
+command: >-
+  python score_model_fairness.py
+  --trained_model ${{inputs.trained_model}}
+  --testdata ${{inputs.testdata}}
+  --output_dir ${{outputs.output_dir}}
+
+environment:
+  image: mcr.microsoft.com/azureml/minimal-ubuntu20.04-py38-cpu-inference:latest
+  conda_file: conda.yml

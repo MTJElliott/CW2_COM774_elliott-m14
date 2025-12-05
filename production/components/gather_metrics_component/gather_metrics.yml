@@ -1,0 +1,34 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: gather_metrics
+display_name: Gather Metrics
+version: 1
+type: command
+
+inputs:
+  dt_dir:
+    type: uri_folder
+    description: Directory containing DecisionTree model metrics
+  lr_dir:
+    type: uri_folder
+    description: Directory containing LogisticRegression model metrics
+  rf_dir:
+    type: uri_folder
+    description: Directory containing RandomForest model metrics
+
+outputs:
+  output_dir:
+    type: uri_folder
+    description: Directory where combined metrics JSON will be saved
+
+code: .
+
+environment:
+  image: mcr.microsoft.com/azureml/minimal-ubuntu20.04-py38-cpu-inference:latest
+  conda_file: conda.yml
+
+command: >-
+  python gather_metrics.py
+  --dt_dir ${{inputs.dt_dir}}
+  --lr_dir ${{inputs.lr_dir}}
+  --rf_dir ${{inputs.rf_dir}}
+  --output_dir ${{outputs.output_dir}}
