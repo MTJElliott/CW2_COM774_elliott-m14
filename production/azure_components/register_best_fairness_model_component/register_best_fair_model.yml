@@ -1,7 +1,7 @@
 $schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
 name: register_best_fair_model
 display_name: Register Best Fair(DP) Model
-version: 6
+version: 7
 type: command
 
 inputs:
